@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Approval Prediction</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Parkinsans:wght@300;400;500;600;700;800&display=swap");
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Parkinsans", sans-serif;
+      }
+
+      body {
+        background: linear-gradient(
+          to right,
+          #e0f7fa,
+          #b2ebf2,
+          #80deea,
+          #4dd0e1
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        background: linear-gradient(to bottom, #ffffff, #e3f2fd);
+        padding: 40px;
+        border-radius: 30px;
+        box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.2);
+        max-width: 700px;
+        width: 100%;
+        text-align: center;
+      }
+
+      h2 {
+        color: #1565c0;
+        margin-bottom: 20px;
+      }
+
+      .form-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        width: 50%;
+        text-align: left;
+        font-weight: bold;
+        color: #37474f;
+      }
+
+      .form-group input,
+      .form-group select {
+        width: 50%;
+        padding: 12px;
+        background: linear-gradient(to right, #e3f2fd, #bbdefb);
+        border: 1px solid #90caf9;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: 400;
+        outline: none;
+      }
+
+      button {
+        background: linear-gradient(to right, #64b5f6, #42a5f5);
+        color: white;
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: 0.3s ease;
+        width: 100%;
+        margin-top: 15px;
+      }
+
+      button:hover {
+        background: linear-gradient(to right, #42a5f5, #1e88e5);
+      }
+
+      #result {
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #06224d; /* Darker blue for better visibility */
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9); /* Corrected opacity */
+      }
+
+      @media (max-width: 700px) {
+        .form-group {
+          flex-direction: column;
+        }
+        .form-group label,
+        .form-group input,
+        .form-group select {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Loan Approval Prediction</h2>
+      <form id="predictionForm">
+        <div class="form-group">
+          <label>Age:</label>
+          <input type="number" name="person_age" required />
+          <label>Income:</label>
+          <input type="number" name="person_income" required />
+        </div>
+
+        <div class="form-group">
+          <label>Home Ownership:</label>
+          <select name="person_home_ownership">
+            <option value="RENT">RENT</option>
+            <option value="MORTGAGE">MORTGAGE</option>
+            <option value="OWN">OWN</option>
+            <option value="OTHER">OTHER</option>
+          </select>
+          <label>Employment Length:</label>
+          <input type="number" name="person_emp_length" required />
+        </div>
+
+        <div class="form-group">
+          <label>Loan Intent:</label>
+          <select name="loan_intent">
+            <option value="EDUCATION">Education</option>
+            <option value="MEDICAL">Medical</option>
+            <option value="PERSONAL">Personal</option>
+            <option value="VENTURE">Venture</option>
+            <option value="DEBTCONSOLIDATION">Debt Consolidation</option>
+          </select>
+          <label>Loan Grade:</label>
+          <select name="loan_grade">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Loan Amount:</label>
+          <input type="number" name="loan_amnt" required />
+          <label>Interest Rate:</label>
+          <input type="number" step="0.01" name="loan_int_rate" required />
+        </div>
+
+        <div class="form-group">
+          <label>Loan Percent Income:</label>
+          <input
+            type="number"
+            step="0.01"
+            name="loan_percent_income"
+            required
+          />
+          <label>Credit Default on File:</label>
+          <select name="cb_person_default_on_file">
+            <option value="Y">Yes</option>
+            <option value="N">No</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Credit History Length:</label>
+          <input type="number" name="cb_person_cred_hist_length" required />
+        </div>
+
+        <button type="submit">Predict</button>
+      </form>
+
+      <div id="result"></div>
+    </div>
+
+    <script>
+      document
+        .getElementById("predictionForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          let formData = new FormData(this);
+
+          try {
+            let response = await fetch("/predict", {
+              method: "POST",
+              body: formData,
+            });
+
+            let data = await response.json();
+            let resultDiv = document.getElementById("result");
+            if (data.prediction) {
+              resultDiv.innerText = data.prediction;
+              resultDiv.style.color = data.prediction.includes("Approved")
+                ? "white"
+                : "red";
+            } else if (data.error) {
+              resultDiv.innerText = "Error: " + data.error;
+              resultDiv.style.color = "red";
+            }
+          } catch (error) {
+            document.getElementById("result").innerText = "Request Failed!";
+            document.getElementById("result").style.color = "red";
+          }
+        });
+    </script>
+  </body>
+</html>
